@@ -78,6 +78,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   worldPrefab: {fileID: 2832483029581713376, guid: c5cc463d1e10f422281b894f98dcc29c, type: 3}
+  gameManagerPrefab: {fileID: 1816385132919768298, guid: 864ae8d97fd874850933040b7c6caf23, type: 3}
   guiControllerPrefab: {fileID: 3393732523295581646, guid: c0611db02a3c248239e85f94284f46a2, type: 3}
   screenPrefabs:
   - {fileID: 2793095468912130560, guid: 8b26207160bee4ed4aae60c0697ae72d, type: 3}

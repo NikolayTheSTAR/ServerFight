@@ -3,11 +3,14 @@ using UnityEngine;
 /// <summary>
 /// Содержит логику игры. Принимает запросы от клиента и обрабатывать их. 
 /// Хранит состояние двух юнитов и обрабатывает их действия в каждом ходе.
+/// Тестовым называется поскольку реализует IGameServer в тестовом виде, без реального обращения к серверу, данные хранятся на девайсе
 /// </summary>
-public class GameServer : IGameService
+public class TestGameServer : IGameServer
 {
-    public GameServer()
+    public TestGameServer()
     {
-        Debug.Log("Server created");
+        Debug.Log("Test Server created");
     }
+
+    // todo должен уметь возвращять текущее состояние игры. Для примера можно подгружать просто из DataController, для реальной серверной логики 
 }

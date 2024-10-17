@@ -8,7 +8,8 @@ using TheSTAR.GUI;
 /// </summary>
 public class GameSceneInstaller : MonoInstaller
 {
-    [SerializeField] private GameWorld worldPrefab; // todo секунду, мир 
+    [SerializeField] private GameWorld worldPrefab;
+    [SerializeField] private GameManager gameManagerPrefab;
 
     [Header("GUI")]
     [SerializeField] private GuiController guiControllerPrefab;
@@ -28,10 +29,13 @@ public class GameSceneInstaller : MonoInstaller
         // gui
         InstallGuiScreens();
 
-        Container.Bind<GameClient>().AsSingle();
-        Container.Bind<GameServer>().AsSingle();
+        // network
+        Container.Bind<IGameClient>().To<MobileGameClient>().AsSingle(); // тут можно будет менять платформу клиента на необходимую
+        Container.Bind<IGameServer>().To<TestGameServer>().AsSingle(); // тут можно будет переключать сервер с тестового на реальный
         Container.Bind<NetworkManager>().AsSingle();
-        Container.Bind<GameManager>().AsSingle().NonLazy();
+
+        var gameManager = Container.InstantiatePrefabForComponent<GameManager>(gameManagerPrefab);
+        Container.Bind<GameManager>().FromInstance(gameManager).AsSingle();
     }
 
     private void InstallGuiContainers()

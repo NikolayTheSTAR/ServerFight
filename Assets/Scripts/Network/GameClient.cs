@@ -5,7 +5,7 @@ using Zenject;
 /// <summary>
 /// Отвечает за обработку ввода от игрока, отображение интерфейса и за получение обновлений от сервера.
 /// </summary>
-public class GameClient : IGameService
+public class MobileGameClient : IGameClient
 {
     private GameWorld world;
     private GuiController gui;
@@ -19,7 +19,7 @@ public class GameClient : IGameService
         Debug.Log("Client connected");
     }
 
-    public GameClient()
+    public MobileGameClient()
     {
         Debug.Log("Client created");
     }
