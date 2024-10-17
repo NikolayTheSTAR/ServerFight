@@ -8,7 +8,7 @@ using TheSTAR.GUI;
 /// </summary>
 public class GameSceneInstaller : MonoInstaller
 {
-    [SerializeField] private GameWorld worldPrefab;
+    [SerializeField] private GameWorld worldPrefab; // todo секунду, мир 
 
     [Header("GUI")]
     [SerializeField] private GuiController guiControllerPrefab;
@@ -19,6 +19,11 @@ public class GameSceneInstaller : MonoInstaller
 
     public override void InstallBindings()
     {
+        Container.Bind<GameClient>().AsSingle();
+        Container.Bind<GameServer>().AsSingle();
+        Container.Bind<NetworkManager>().AsSingle();
+        Container.Bind<GameManager>().AsSingle();
+
         InstallGuiContainers();
         
         // world

@@ -7,13 +7,15 @@ using TheSTAR.Utility;
 public class GameWorld : MonoBehaviour
 {
     private GuiController gui;
+    private GameManager gameManager;
 
     private readonly ResourceHelper<GameConfig> gameConfig = new("Configs/GameConfig");
 
     [Inject]
-    private void Construct(GuiController gui)
+    private void Construct(GuiController gui, GameManager gameManager)
     {
         this.gui = gui;
+        this.gameManager = gameManager;
     }
 
     private void Start()

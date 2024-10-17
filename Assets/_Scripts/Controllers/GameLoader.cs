@@ -19,9 +19,3 @@ public class GameLoader : MonoBehaviour
         SceneManager.LoadScene("Game");
     }
 }
-
-public enum GameAbVersionType
-{
-    VersionA,
-    VersionB
-}
