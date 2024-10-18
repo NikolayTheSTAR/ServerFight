@@ -15,12 +15,15 @@ public class MobileGameClient : IGameClient
     {
         this.world = world;
         this.gui = gui;
-
-        Debug.Log("Client connected");
     }
 
     public MobileGameClient()
     {
         Debug.Log("Client created");
+    }
+
+    public void VisualizeGameState(GameState state)
+    {
+        world.VisualizeGameState(state);
     }
 }
