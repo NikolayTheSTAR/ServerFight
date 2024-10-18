@@ -22,7 +22,7 @@ public class MobileGameClient : IGameClient
         Debug.Log("Client created");
     }
 
-    public void VisualizeGameState(GameState state)
+    public void VisualizeGameState(BattleState state)
     {
         world.VisualizeGameState(state);
     }

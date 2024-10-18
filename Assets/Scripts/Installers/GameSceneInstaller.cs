@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Zenject;
 using TheSTAR.GUI;
+using TheSTAR.Data;
 
 /// <summary>
 /// Биндим в контексте сцены Game
@@ -20,6 +21,8 @@ public class GameSceneInstaller : MonoInstaller
 
     public override void InstallBindings()
     {
+        Container.Bind<DataController>().AsSingle();
+
         InstallGuiContainers();
         
         // world
@@ -30,7 +33,7 @@ public class GameSceneInstaller : MonoInstaller
         InstallGuiScreens();
 
         // network
-        Container.Bind<IGameClient>().To<MobileGameClient>().AsSingle(); // тут можно будет менять платформу клиента на необходимую
+        Container.Bind<IGameClient>().To<MobileGameClient>().AsSingle(); // тут можно будет менять платформу клиента на необходимую (мобайл, PC и прочее)
         Container.Bind<IGameServer>().To<TestGameServer>().AsSingle(); // тут можно будет переключать сервер с тестового на реальный
         Container.Bind<NetworkManager>().AsSingle();
 

@@ -1,3 +1,5 @@
+using System;
+using Newtonsoft.Json;
 using Zenject;
 
 /// <summary>
@@ -15,33 +17,35 @@ public class NetworkManager
         this.server = server;
     }
 
-    public void InitGame()
+    public void Init()
     {
+        server.Init();
+    }
+
+    public void LoadGameState()
+    {
+        server.GetCurrentGameState(state => client.VisualizeGameState(state));
     }
 }
 
-public struct GameState
+[Serializable]
+public struct BattleState
 {
-    private UnitState playerState;
-    private UnitState enemyState;
+    public UnitState playerState;
+    public UnitState enemyState;
 
-    public UnitState PlayerState => playerState;
-    public UnitState EnemyState => enemyState;
-
-    public GameState(UnitState playerState, UnitState enemyState)
+    public BattleState(UnitState playerState, UnitState enemyState)
     {
         this.playerState = playerState;
         this.enemyState = enemyState;
     }
 }
 
+[Serializable]
 public struct UnitState
 {
-    private int hp;
-    private int maxHp;
-
-    public int HP => hp;
-    public int MaxHP => maxHp;
+    public int hp;
+    public int maxHp;
 
     public UnitState(int hp, int maxHp)
     {

@@ -6,6 +6,6 @@ public class UnitVisual : MonoBehaviour
 
     public void VisualizeUnitState(UnitState state)
     {
-        hpBar.Set(state.HP, (float)state.HP / (float)state.MaxHP);
+        hpBar.Set(state.hp, (float)state.hp / (float)state.maxHp);
     }
 }

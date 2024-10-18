@@ -4,5 +4,5 @@ using UnityEngine;
 
 public interface IGameClient
 {
-    void VisualizeGameState(GameState state);
+    void VisualizeGameState(BattleState state);
 }

@@ -30,17 +30,17 @@ public class GameWorld : MonoBehaviour
         gui.Show(loadScreen);
     }
 
-    public void VisualizeGameState(GameState state)
+    public void VisualizeGameState(BattleState state)
     {
-        player.VisualizeUnitState(state.PlayerState);
-        enemy.VisualizeUnitState(state.EnemyState);
+        player.VisualizeUnitState(state.playerState);
+        enemy.VisualizeUnitState(state.enemyState);
     }
 
     [ContextMenu("TestVisualize5")]
     private void TestVisualize5()
     {
         VisualizeGameState(
-            new GameState(
+            new BattleState(
                 new UnitState(7, 10), 
                 new UnitState(5, 10)));
     }
@@ -49,7 +49,7 @@ public class GameWorld : MonoBehaviour
     private void TestVisualize1()
     {
         VisualizeGameState(
-            new GameState(
+            new BattleState(
                 new UnitState(1, 10), 
                 new UnitState(2, 10)));
     }

@@ -7,6 +7,9 @@ public class BattleConfig : ScriptableObject
 {
     [SerializeField] private UnitConfigData playerData;
     [SerializeField] private UnitConfigData enemyData;
+
+    public UnitConfigData PlayerData => playerData;
+    public UnitConfigData EnemyData => enemyData;
 }
 
 [Serializable]

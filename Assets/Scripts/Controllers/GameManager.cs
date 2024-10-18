@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
 
@@ -15,19 +13,30 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        InitGame();
+        LoadGameState();
         StartGame();
     }
 
     private void InitGame()
     {
-        Debug.Log("INIT");
-        network.InitGame();
+        network.Init();
     }
 
+    /// <summary>
+    /// Клиент должен запросить текущее состояние игры у сервера, сервер должен вернуть либо стартовое состояние, либо сохранённое
+    /// </summary>
+    private void LoadGameState()
+    {
+        Debug.Log("INIT");
+        network.LoadGameState();
+    }
+
+    /// <summary>
+    /// Непосредственно начало игры, с этого момента работает обработка ввода игрока
+    /// </summary>
     private void StartGame()
     {
         Debug.Log("START GAME");
-
-        // todo нужно достать текущее состояние игры с сервера
     }
 }

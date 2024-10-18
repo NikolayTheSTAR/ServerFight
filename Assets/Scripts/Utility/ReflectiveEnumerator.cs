@@ -9,9 +9,7 @@ public static class ReflectiveEnumerator
     {
         List<Type> types = new ();
 
-        foreach (Type type in
-            Assembly.GetAssembly(typeof(T)).GetTypes()
-            .Where(myType => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T))))
+        foreach (Type type in Assembly.GetAssembly(typeof(T)).GetTypes().Where(myType => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T))))
         {
             types.Add(type);
         }
