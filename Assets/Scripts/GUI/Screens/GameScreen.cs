@@ -5,13 +5,8 @@ namespace TheSTAR.GUI
 {
     public class GameScreen : GuiScreen
     {
-        private GuiController gui;
-
-        [Inject]
-        private void Construct(GuiController gui)
-        {
-            this.gui = gui;
-        }
+        [SerializeField] private PointerButton restartBtn;
+        [SerializeField] private UnityDictionary<SkillType, PointerButton> skillButtons;
 
         protected override void OnShow()
         {

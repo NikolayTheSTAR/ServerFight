@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "BattleConfig", menuName = "Data/BattleConfig")]
@@ -12,9 +11,13 @@ public class BattleConfig : ScriptableObject
     [Header("Skills")]
     [SerializeField] private SkillConfigData[] skills;
 
+    [Header("Effects")]
+    [SerializeField] private EffectConfigData[] effects;
+
     public UnitConfigData PlayerData => playerData;
     public UnitConfigData EnemyData => enemyData;
     public SkillConfigData[] Skills => skills;
+    public EffectConfigData[] Effects => effects;
 }
 
 [Serializable]
@@ -35,6 +38,15 @@ public struct SkillConfigData
     [SerializeField] private int recharging;
 }
 
+[Serializable]
+public struct EffectConfigData
+{
+    [SerializeField] private EffectType effectType;
+    [SerializeField] private Sprite icon;
+
+    public Sprite Icon => icon;
+}
+
 public enum SkillType
 {
     /// <summary> применяется на противника. Наносит 8 единиц урона. </summary>
@@ -51,6 +63,13 @@ public enum SkillType
 
     /// <summary> применяется на себя, снимает эффект горения. Перезарядка 5 ходов. </summary>
     Clear
+}
+
+public enum EffectType
+{
+    Defence,
+    Regenerate,
+    Fire
 }
 
 public enum SkillTargetType

@@ -60,12 +60,27 @@ public struct UnitState
 {
     public int hp;
     public int maxHp;
+    public UnitEffectState[] effects;
 
-    public UnitState(int hp, int maxHp)
+    public UnitState(int hp, int maxHp, UnitEffectState[] effects)
     {
         this.hp = hp;
         this.maxHp = maxHp;
+        this.effects = effects;
     }
 
     // todo тут так же должна быть информация по перезарядке способностей и по ходам
+}
+
+[Serializable]
+public struct UnitEffectState
+{
+    public EffectType effectType;
+    public int value;
+
+    public UnitEffectState(EffectType effectType, int value)
+    {
+        this.effectType = effectType;
+        this.value = value;
+    }
 }

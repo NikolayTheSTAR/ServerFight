@@ -19,8 +19,8 @@ public class GameWorld : MonoBehaviour
     {
         VisualizeGameState(
             new BattleState(
-                new UnitState(7, 10), 
-                new UnitState(5, 10)));
+                new UnitState(7, 10, new UnitEffectState[]{}), 
+                new UnitState(5, 10, new UnitEffectState[]{})));
     }
 
     [ContextMenu("TestVisualize1")]
@@ -28,7 +28,14 @@ public class GameWorld : MonoBehaviour
     {
         VisualizeGameState(
             new BattleState(
-                new UnitState(1, 10), 
-                new UnitState(2, 10)));
+                new UnitState(1, 10, new UnitEffectState[]
+                {
+                    new UnitEffectState(EffectType.Defence, 3),
+                    new UnitEffectState(EffectType.Regenerate, 1),
+                }), 
+                new UnitState(2, 10, new UnitEffectState[]
+                {
+                    new UnitEffectState(EffectType.Fire, 2)
+                })));
     }
 }

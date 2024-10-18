@@ -42,3 +42,10 @@ MonoBehaviour:
     force: 5
     duration: 0
     recharging: 6
+  effects:
+  - effectType: 0
+    icon: {fileID: 21300000, guid: ac6f74351175d4714bfe049b1e355c6f, type: 3}
+  - effectType: 1
+    icon: {fileID: 21300000, guid: 719e59294f8aa4513a789c6b3c6c10a8, type: 3}
+  - effectType: 2
+    icon: {fileID: 21300000, guid: 7d4310fd5392e44089ab16878fa8930e, type: 3}

@@ -66,8 +66,8 @@ public class TestGameServer : IGameServer
 
     private BattleState GetStartGameState()
     {        
-        UnitState playerState = new(battleConfig.Get.PlayerData.MaxHp, battleConfig.Get.PlayerData.MaxHp);
-        UnitState enemyState = new(battleConfig.Get.EnemyData.MaxHp, battleConfig.Get.EnemyData.MaxHp);
+        UnitState playerState = new(battleConfig.Get.PlayerData.MaxHp, battleConfig.Get.PlayerData.MaxHp, new UnitEffectState[]{});
+        UnitState enemyState = new(battleConfig.Get.EnemyData.MaxHp, battleConfig.Get.EnemyData.MaxHp, new UnitEffectState[]{});
         return new(playerState, enemyState);
     }
 }
