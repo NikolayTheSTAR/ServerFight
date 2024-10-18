@@ -12,5 +12,12 @@ namespace TheSTAR.GUI
         {
             this.gui = gui;
         }
+
+        protected override void OnShow()
+        {
+            base.OnShow();
+
+            Debug.Log("OnShow GameScreen");
+        }
     }
 }

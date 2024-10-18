@@ -1,8 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public interface IGameClient
+public interface IGameClient : IGameService
 {
     void VisualizeGameState(BattleState state);
+    // todo должны быть методы на улавливание пользовательского взаимодействия
 }

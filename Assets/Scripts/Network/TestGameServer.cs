@@ -15,6 +15,8 @@ public class TestGameServer : IGameServer
 
     private readonly ResourceHelper<BattleConfig> battleConfig = new("Configs/BattleConfig");
 
+    public event Action<BattleState> OnChangeGameState;
+
     public TestGameServer()
     {
         Debug.Log("Test Server created");
@@ -26,15 +28,25 @@ public class TestGameServer : IGameServer
         this.data = data;
     }
 
-    public void Init()
+    public void InitGame()
+    {}
+
+    public void LoadGame()
     {
         data.LoadAll();
+        GetCurrentGameState(state =>
+        {
+            OnChangeGameState?.Invoke(state);
+        });
     }
+
+    public void StartGame()
+    {}
 
     /// <summary>
     /// В тестовой реализации данные хранятся на девайсе, для реального проекта можно было бы создать RealGameServer, который бы уже работал с сетью
     /// </summary>
-    public void GetCurrentGameState(Action<BattleState> callback)
+    private void GetCurrentGameState(Action<BattleState> callback)
     {
         var battleData = data.gameData.GetSection<BattleData>();
         

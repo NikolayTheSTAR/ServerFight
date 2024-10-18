@@ -22,6 +22,19 @@ public class MobileGameClient : IGameClient
         Debug.Log("Client created");
     }
 
+    public void InitGame()
+    {}
+
+    public void LoadGame()
+    {
+        gui.Show<LoadScreen>();
+    }
+
+    public void StartGame()
+    {
+        gui.Show<GameScreen>();
+    }
+
     public void VisualizeGameState(BattleState state)
     {
         world.VisualizeGameState(state);

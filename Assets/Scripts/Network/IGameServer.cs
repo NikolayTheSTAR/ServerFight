@@ -1,10 +1,7 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
-public interface IGameServer
+public interface IGameServer : IGameService
 {
-    void Init();
-    void GetCurrentGameState(Action<BattleState> callback);
+    //void GetCurrentGameState(Action<BattleState> callback);
+    event Action<BattleState> OnChangeGameState;
 }
