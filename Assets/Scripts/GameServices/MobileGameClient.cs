@@ -17,11 +17,6 @@ public class MobileGameClient : IGameClient
         this.gui = gui;
     }
 
-    public MobileGameClient()
-    {
-        Debug.Log("Client created");
-    }
-
     public void InitGame()
     {}
 

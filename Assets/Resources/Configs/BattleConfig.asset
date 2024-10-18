@@ -16,3 +16,29 @@ MonoBehaviour:
     maxHp: 10
   enemyData:
     maxHp: 10
+  skills:
+  - skillType: 0
+    target: 1
+    force: 8
+    duration: 0
+    recharging: 0
+  - skillType: 1
+    target: 0
+    force: 5
+    duration: 2
+    recharging: 4
+  - skillType: 2
+    target: 0
+    force: 5
+    duration: 3
+    recharging: 5
+  - skillType: 3
+    target: 1
+    force: 5
+    duration: 5
+    recharging: 6
+  - skillType: 4
+    target: 0
+    force: 5
+    duration: 0
+    recharging: 6

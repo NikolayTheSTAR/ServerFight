@@ -17,11 +17,6 @@ public class TestGameServer : IGameServer
 
     public event Action<BattleState> OnChangeGameState;
 
-    public TestGameServer()
-    {
-        Debug.Log("Test Server created");
-    }
-
     [Inject]
     private void Construct(DataController data)
     {
