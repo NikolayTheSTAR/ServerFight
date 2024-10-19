@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using Zenject;
 using UnityEngine.EventSystems;
 
 namespace TheSTAR.GUI
@@ -56,7 +55,7 @@ namespace TheSTAR.GUI
 
         private void OnButtonEnter(PointerEventData eventData)
         {
-            if (!_isInteractalbe) return;
+            //if (!_isInteractalbe) return;
             //if (currentInfo._useEnterSound && _soundController) _soundController.Play(currentInfo._enterSoundType);
             
             _isEnter = true;
@@ -68,7 +67,7 @@ namespace TheSTAR.GUI
 
         private void OnButtonExit(PointerEventData eventData)
         {            
-            if (!_isInteractalbe) return;
+            //if (!_isInteractalbe) return;
             
             _isEnter = false;
 

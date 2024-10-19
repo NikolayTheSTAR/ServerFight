@@ -19,6 +19,8 @@ public class TestGameServer : IGameServer
 
     public event Action<BattleState> OnChangeGameState;
 
+    private Tweener waitTweener;
+
     [Inject]
     private void Construct(DataController data)
     {
@@ -40,7 +42,7 @@ public class TestGameServer : IGameServer
     public void StartGame()
     {
         var battleData = data.gameData.GetSection<BattleData>();
-        if (!battleData.battleState.playersTurn) SimulateWaitForEnemysTurn();
+        if (battleData.battleState.battleStatus == BattleStatus.EnemysTurn) SimulateWaitForEnemysTurn();
     }
 
     /// <summary>
@@ -53,8 +55,8 @@ public class TestGameServer : IGameServer
         if (battleData.gameStarted) callback(battleData.battleState);
         else
         {
-            RestartGame(out var startState);
-            callback(startState);
+            RestartGame();
+            callback(battleData.battleState);
         }
     }
 
@@ -72,7 +74,7 @@ public class TestGameServer : IGameServer
             new Dictionary<EffectType, int>(), 
             new Dictionary<AbilityType, int>());
 
-        return new(true, playerState, enemyState);
+        return new(BattleStatus.PlayerTurn, playerState, enemyState);
     }
 
     public void HandleGameAction(bool playerOwner, string actionID)
@@ -80,7 +82,7 @@ public class TestGameServer : IGameServer
         switch (actionID)
         {
             case "restart":
-                RestartGame(out _);
+                RestartGame();
                 break;
 
             case "ability_Attack":
@@ -105,12 +107,12 @@ public class TestGameServer : IGameServer
         }
     }
 
-    private void RestartGame(out BattleState startState)
+    private void RestartGame()
     {
+        waitTweener?.Kill();
         var battleData = data.gameData.GetSection<BattleData>();
 
-        Debug.Log("Новая игра");
-        startState = GetInitialGameState();
+        var startState = GetInitialGameState();
         battleData.battleState = startState;
         battleData.gameStarted = true;
         data.Save(battleData);
@@ -121,7 +123,12 @@ public class TestGameServer : IGameServer
     private void DoAbility(bool playerOwner, AbilityType abilityType)
     {
         var battleData = data.gameData.GetSection<BattleData>();
-        if (playerOwner != battleData.battleState.playersTurn) return;
+
+        bool canUseAbilityByGameStatus = 
+            (playerOwner && battleData.battleState.battleStatus == BattleStatus.PlayerTurn) || 
+            (!playerOwner && battleData.battleState.battleStatus == BattleStatus.EnemysTurn);
+
+        if (!canUseAbilityByGameStatus) return;
 
         var abilityData = battleConfig.Get.Abilities[(int)abilityType];
         bool finalEffectForPlayer = abilityData.EffectForOwner ? playerOwner : !playerOwner;
@@ -155,19 +162,21 @@ public class TestGameServer : IGameServer
         // recharging
         if (abilityData.Recharging > 0)
         {
-            var ownerRecharging = battleData.battleState.playerState.abilitiesRecharging;
+            var ownerRecharging = playerOwner ? battleData.battleState.playerState.abilitiesRecharging : battleData.battleState.enemyState.abilitiesRecharging;
             if (ownerRecharging.ContainsKey(abilityType)) ownerRecharging[abilityType] = abilityData.Recharging;
             else ownerRecharging.Add(abilityType, abilityData.Recharging);
         }
-
-        battleData.battleState.playersTurn = !playerOwner;
+        
+        battleData.battleState.battleStatus = playerOwner ? BattleStatus.EnemysTurn : BattleStatus.PlayerTurn;
         data.Save(battleData);
 
         OnChangeGameState?.Invoke(battleData.battleState);
 
-        if (playerOwner) SimulateWaitForEnemysTurn();
+        // проверка умер ли персонаж либо враг происходит после каждого хода
 
-        // todo после того, как сходил игрок, должен сходить враг
+        if (battleData.battleState.playerState.hp <= 0) Defeat();
+        else if (battleData.battleState.enemyState.hp <= 0) Win();
+        else if (playerOwner) SimulateWaitForEnemysTurn();
 
         // todo это потом расположить в нужном месте
         //OnSwitchToNextStep(battleData.battleState.playerState);
@@ -195,7 +204,6 @@ public class TestGameServer : IGameServer
         }
 
         var decision = ArrayUtility.GetRandomValue(availableAbilities);
-        Debug.Log("Enemy: " + decision);
         DoAbility(false, decision);
     }
 
@@ -280,6 +288,26 @@ public class TestGameServer : IGameServer
 
         data.Save(battleData);
 
+        OnChangeGameState?.Invoke(battleData.battleState);
+    }
+
+    private void Win()
+    {
+        waitTweener?.Kill();
+        var battleData = data.gameData.GetSection<BattleData>();
+        battleData.battleState.battleStatus = BattleStatus.Win;
+        data.Save(battleData);
+        waitTweener = DOVirtual.Float(0f, 1f, 1f, (value) => {}).OnComplete(RestartGame);
+        OnChangeGameState?.Invoke(battleData.battleState);
+    }
+
+    private void Defeat()
+    {
+        waitTweener?.Kill();
+        var battleData = data.gameData.GetSection<BattleData>();
+        battleData.battleState.battleStatus = BattleStatus.Defeat;
+        data.Save(battleData);
+        waitTweener = DOVirtual.Float(0f, 1f, 1f, (value) => {}).OnComplete(RestartGame);
         OnChangeGameState?.Invoke(battleData.battleState);
     }
 }

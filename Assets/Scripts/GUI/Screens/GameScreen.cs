@@ -32,15 +32,23 @@ namespace TheSTAR.GUI
 
         public void VisualizeGameState(BattleState state)
         {
-            turnText.text = state.playersTurn ? "Your\nTurn" : "Enemy's\nTurn";
+            string messageText = state.battleStatus switch
+            {
+                BattleStatus.PlayerTurn => "Your\nTurn",
+                BattleStatus.EnemysTurn => "Enemy's\nTurn",
+                BattleStatus.Win => "Win",
+                BattleStatus.Defeat => "Defeat",
+                _ => "",
+            };
+            turnText.text = messageText;
 
             foreach (var skillButton in skillButtons.KeyValues)
             {
                 if (state.playerState.abilitiesRecharging.ContainsKey(skillButton.Key))
                 {
-                    skillButton.Value.Visualize(state.playersTurn, state.playerState.abilitiesRecharging[skillButton.Key]);
+                    skillButton.Value.Visualize(state.battleStatus == BattleStatus.PlayerTurn, state.playerState.abilitiesRecharging[skillButton.Key]);
                 }
-                else skillButton.Value.Visualize(state.playersTurn, 0);
+                else skillButton.Value.Visualize(state.battleStatus == BattleStatus.PlayerTurn, 0);
             }
         }
 

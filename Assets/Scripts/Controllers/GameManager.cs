@@ -46,7 +46,7 @@ public class GameManager : MonoBehaviour
     {
         client.VisualizeGameState(
             new BattleState(
-                true,
+                BattleStatus.PlayerTurn,
                 new UnitState(7, 10, new Dictionary<EffectType, int>(), new Dictionary<AbilityType, int>()
                 {
                     {AbilityType.Regenerate, 1},
@@ -59,7 +59,7 @@ public class GameManager : MonoBehaviour
     {
         client.VisualizeGameState(
             new BattleState(
-                false,
+                BattleStatus.EnemysTurn,
                 new UnitState(1, 10, new Dictionary<EffectType, int>()
                 {
                     {EffectType.Defence, 3},
@@ -79,13 +79,13 @@ public class GameManager : MonoBehaviour
 [Serializable]
 public struct BattleState
 {
-    public bool playersTurn;
+    public BattleStatus battleStatus;
     public UnitState playerState;
     public UnitState enemyState;
 
-    public BattleState(bool playersTurn, UnitState playerState, UnitState enemyState)
+    public BattleState(BattleStatus battleStatus, UnitState playerState, UnitState enemyState)
     {
-        this.playersTurn = playersTurn;
+        this.battleStatus = battleStatus;
         this.playerState = playerState;
         this.enemyState = enemyState;
     }
@@ -110,4 +110,12 @@ public class UnitState
         this.effects = effects;
         this.abilitiesRecharging = abilitiesRecharging;
     }    
+}
+
+public enum BattleStatus
+{
+    PlayerTurn,
+    EnemysTurn,
+    Win,
+    Defeat
 }
