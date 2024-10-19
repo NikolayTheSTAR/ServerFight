@@ -33,5 +33,6 @@ public class MobileGameClient : IGameClient
     public void VisualizeGameState(BattleState state)
     {
         world.VisualizeGameState(state);
+        gui.FindScreen<GameScreen>().VisualizeGameState(state);
     }
 }

@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using Zenject;
 
@@ -5,14 +6,22 @@ namespace TheSTAR.GUI
 {
     public class GameScreen : GuiScreen
     {
+        [SerializeField] private TextMeshProUGUI turnText;
         [SerializeField] private PointerButton restartBtn;
-        [SerializeField] private UnityDictionary<SkillType, PointerButton> skillButtons;
+        [SerializeField] private UnityDictionary<SkillType, SkillButton> skillButtons;
 
-        protected override void OnShow()
+        public void VisualizeGameState(BattleState state)
         {
-            base.OnShow();
+            turnText.text = state.playersTurn ? "Your\nTurn" : "Enemy's\nTurn";
 
-            Debug.Log("OnShow GameScreen");
+            foreach (var skillButton in skillButtons.KeyValues)
+            {
+                if (state.playerState.skillsRecharging.ContainsKey(skillButton.Key))
+                {
+                    skillButton.Value.Visualize(state.playersTurn, state.playerState.skillsRecharging[skillButton.Key]);
+                }
+                else skillButton.Value.Visualize(state.playersTurn, 0);
+            }
         }
     }
 }

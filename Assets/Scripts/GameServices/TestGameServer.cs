@@ -3,6 +3,7 @@ using TheSTAR.Data;
 using UnityEngine;
 using Zenject;
 using TheSTAR.Utility;
+using System.Collections.Generic;
 
 /// <summary>
 /// Содержит логику игры. Принимает запросы от клиента и обрабатывать их. 
@@ -56,7 +57,7 @@ public class TestGameServer : IGameServer
         else
         {
             Debug.Log("Новая игра");
-            var startState = GetStartGameState();
+            var startState = GetInitialGameState();
             battleData.battleState = startState;
             battleData.gameStarted = true;
             data.Save(battleData);
@@ -64,10 +65,20 @@ public class TestGameServer : IGameServer
         }
     }
 
-    private BattleState GetStartGameState()
+    private BattleState GetInitialGameState()
     {        
-        UnitState playerState = new(battleConfig.Get.PlayerData.MaxHp, battleConfig.Get.PlayerData.MaxHp, new UnitEffectState[]{});
-        UnitState enemyState = new(battleConfig.Get.EnemyData.MaxHp, battleConfig.Get.EnemyData.MaxHp, new UnitEffectState[]{});
-        return new(playerState, enemyState);
+        UnitState playerState = new(
+            battleConfig.Get.PlayerData.MaxHp, 
+            battleConfig.Get.PlayerData.MaxHp, 
+            new UnitEffectState[]{}, 
+            new Dictionary<SkillType, int>());
+
+        UnitState enemyState = new(
+            battleConfig.Get.EnemyData.MaxHp, 
+            battleConfig.Get.EnemyData.MaxHp, 
+            new UnitEffectState[]{}, 
+            new Dictionary<SkillType, int>());
+
+        return new(true, playerState, enemyState);
     }
 }
