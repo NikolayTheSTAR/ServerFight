@@ -4,6 +4,7 @@ using UnityEngine;
 using Zenject;
 using TheSTAR.Utility;
 using System.Collections.Generic;
+using DG.Tweening;
 
 /// <summary>
 /// Содержит логику игры. Принимает запросы от клиента и обрабатывать их. 
@@ -37,7 +38,10 @@ public class TestGameServer : IGameServer
     }
 
     public void StartGame()
-    {}
+    {
+        var battleData = data.gameData.GetSection<BattleData>();
+        if (!battleData.battleState.playersTurn) SimulateWaitForEnemysTurn();
+    }
 
     /// <summary>
     /// В тестовой реализации данные хранятся на девайсе, для реального проекта можно было бы создать RealGameServer, который бы уже работал с сетью
@@ -70,8 +74,6 @@ public class TestGameServer : IGameServer
 
         return new(true, playerState, enemyState);
     }
-
-    // todo возможно потом стоит сделать так, что в запросе уже есть вся необходимая информация
 
     public void HandleGameAction(bool playerOwner, string actionID)
     {
@@ -118,8 +120,10 @@ public class TestGameServer : IGameServer
 
     private void DoAbility(bool playerOwner, AbilityType abilityType)
     {
-        var abilityData = battleConfig.Get.Abilities[(int)abilityType];
         var battleData = data.gameData.GetSection<BattleData>();
+        if (playerOwner != battleData.battleState.playersTurn) return;
+
+        var abilityData = battleConfig.Get.Abilities[(int)abilityType];
         bool finalEffectForPlayer = abilityData.EffectForOwner ? playerOwner : !playerOwner;
         UnitState unit = finalEffectForPlayer ? battleData.battleState.playerState : battleData.battleState.enemyState;
 
@@ -156,13 +160,43 @@ public class TestGameServer : IGameServer
             else ownerRecharging.Add(abilityType, abilityData.Recharging);
         }
 
+        battleData.battleState.playersTurn = !playerOwner;
         data.Save(battleData);
 
         OnChangeGameState?.Invoke(battleData.battleState);
 
+        if (playerOwner) SimulateWaitForEnemysTurn();
+
+        // todo после того, как сходил игрок, должен сходить враг
+
         // todo это потом расположить в нужном месте
-        OnSwitchToNextStep(battleData.battleState.playerState);
-        OnSwitchToNextStep(battleData.battleState.enemyState);
+        //OnSwitchToNextStep(battleData.battleState.playerState);
+        //OnSwitchToNextStep(battleData.battleState.enemyState);
+    }
+
+    private void SimulateWaitForEnemysTurn()
+    {
+        DOVirtual.Float(0, 1, battleConfig.Get.EnemyDecisionTime, (value) => {}).OnComplete(() =>
+        {
+            DoEnemysTurn();
+        });
+    }
+
+    private void DoEnemysTurn()
+    {
+        var battleData = data.gameData.GetSection<BattleData>();
+        var unit = battleData.battleState.enemyState;
+
+        List<AbilityType> availableAbilities = new();
+        var allAbilities = EnumUtility.GetValues<AbilityType>();
+        foreach (var ability in allAbilities)
+        {
+            if (!unit.abilitiesRecharging.ContainsKey(ability) || unit.abilitiesRecharging[ability] <= 0) availableAbilities.Add(ability);
+        }
+
+        var decision = ArrayUtility.GetRandomValue(availableAbilities);
+        Debug.Log("Enemy: " + decision);
+        DoAbility(false, decision);
     }
 
     private void SetEffect(UnitState unit, EffectType effectType, int duration)
@@ -174,7 +208,7 @@ public class TestGameServer : IGameServer
 
     private void HitUnit(UnitState unit, int force, bool ignoreDefence = false)
     {
-        if (!ignoreDefence && unit.effects.ContainsKey(EffectType.Defence)) force -= battleConfig.Get.Abilities[(int)EffectType.Defence].Force;
+        if (!ignoreDefence && unit.effects.ContainsKey(EffectType.Defence)) force -= battleConfig.Get.Abilities[(int)AbilityType.Defence].Force;
 
         if (force <= 0) return;
         

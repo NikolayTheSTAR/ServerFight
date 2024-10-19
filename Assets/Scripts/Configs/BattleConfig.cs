@@ -13,11 +13,15 @@ public class BattleConfig : ScriptableObject
 
     [Header("Effects")]
     [SerializeField] private EffectConfigData[] effects;
+    
+    [Space]
+    [SerializeField] private float enemyDecisionTime;
 
     public UnitConfigData PlayerData => playerData;
     public UnitConfigData EnemyData => enemyData;
     public AbilityConfigData[] Abilities => abilities;
     public EffectConfigData[] Effects => effects;
+    public float EnemyDecisionTime => enemyDecisionTime;
 }
 
 [Serializable]
