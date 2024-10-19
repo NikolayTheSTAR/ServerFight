@@ -13,7 +13,6 @@ public class GameManager : MonoBehaviour
     {
         this.client = client;
         this.server = server;
-        server.OnChangeGameState += client.VisualizeGameState;
     }
 
     private void Start()
@@ -48,11 +47,11 @@ public class GameManager : MonoBehaviour
         client.VisualizeGameState(
             new BattleState(
                 true,
-                new UnitState(7, 10, new UnitEffectState[]{}, new Dictionary<SkillType, int>()
+                new UnitState(7, 10, new Dictionary<EffectType, int>(), new Dictionary<AbilityType, int>()
                 {
-                    {SkillType.Regenerate, 1},
+                    {AbilityType.Regenerate, 1},
                 }), 
-                new UnitState(5, 10, new UnitEffectState[]{}, new Dictionary<SkillType, int>())));
+                new UnitState(5, 10, new Dictionary<EffectType, int>(), new Dictionary<AbilityType, int>())));
     }
 
     [ContextMenu("TestVisualize2")]
@@ -61,19 +60,19 @@ public class GameManager : MonoBehaviour
         client.VisualizeGameState(
             new BattleState(
                 false,
-                new UnitState(1, 10, new UnitEffectState[]
+                new UnitState(1, 10, new Dictionary<EffectType, int>()
                 {
-                    new UnitEffectState(EffectType.Defence, 3),
-                    new UnitEffectState(EffectType.Regenerate, 2),
-                }, new Dictionary<SkillType, int>()
+                    {EffectType.Defence, 3},
+                    {EffectType.Regenerate, 2},
+                }, new Dictionary<AbilityType, int>()
                 {
-                    {SkillType.Fireball, 5},
-                    {SkillType.Regenerate, 2},
+                    {AbilityType.Fireball, 5},
+                    {AbilityType.Regenerate, 2},
                 }), 
-                new UnitState(2, 10, new UnitEffectState[]
+                new UnitState(2, 10, new Dictionary<EffectType, int>()
                 {
-                    new UnitEffectState(EffectType.Fire, 2)
-                }, new Dictionary<SkillType, int>())));
+                    {EffectType.Fire, 2}
+                }, new Dictionary<AbilityType, int>())));
     }
 }
 
@@ -93,31 +92,22 @@ public struct BattleState
 }
 
 [Serializable]
-public struct UnitState
+public class UnitState
 {
     public int hp;
     public int maxHp;
-    public UnitEffectState[] effects;
-    public Dictionary<SkillType, int> skillsRecharging;
+    public Dictionary<EffectType, int> effects;
+    public Dictionary<AbilityType, int> abilitiesRecharging;
 
-    public UnitState(int hp, int maxHp, UnitEffectState[] effects, Dictionary<SkillType, int> skillsRecharging)
+    public UnitState(
+        int hp, 
+        int maxHp, 
+        Dictionary<EffectType, int> effects, 
+        Dictionary<AbilityType, int> abilitiesRecharging)
     {
         this.hp = hp;
         this.maxHp = maxHp;
         this.effects = effects;
-        this.skillsRecharging = skillsRecharging;
+        this.abilitiesRecharging = abilitiesRecharging;
     }    
-}
-
-[Serializable]
-public struct UnitEffectState
-{
-    public EffectType effectType;
-    public int value;
-
-    public UnitEffectState(EffectType effectType, int value)
-    {
-        this.effectType = effectType;
-        this.value = value;
-    }
 }

@@ -1,5 +1,4 @@
 using TheSTAR.GUI;
-using UnityEngine;
 using Zenject;
 
 /// <summary>
@@ -9,12 +8,15 @@ public class MobileGameClient : IGameClient
 {
     private GameWorld world;
     private GuiController gui;
+    private IGameServer server;
 
     [Inject]
-    private void Construct(GameWorld world, GuiController gui)
+    private void Construct(GameWorld world, GuiController gui, IGameServer server)
     {
         this.world = world;
         this.gui = gui;
+        this.server = server;
+        server.OnChangeGameState += VisualizeGameState;
     }
 
     public void InitGame()
@@ -34,5 +36,10 @@ public class MobileGameClient : IGameClient
     {
         world.VisualizeGameState(state);
         gui.FindScreen<GameScreen>().VisualizeGameState(state);
+    }
+
+    public void SendPlayerActionToServer(string actionID)
+    {
+        server.HandleGameAction(true, actionID);
     }
 }

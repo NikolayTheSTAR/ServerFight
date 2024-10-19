@@ -29,15 +29,15 @@ public class GameSceneInstaller : MonoInstaller
         var world = Container.InstantiatePrefabForComponent<GameWorld>(worldPrefab, worldPrefab.transform.position, Quaternion.identity, null);
         Container.Bind<GameWorld>().FromInstance(world).AsSingle();
 
-        // gui
-        InstallGuiScreens();
-
         // network
-        Container.Bind<IGameClient>().To<MobileGameClient>().AsSingle(); // тут можно будет менять платформу клиента на необходимую (мобайл, PC и прочее)
         Container.Bind<IGameServer>().To<TestGameServer>().AsSingle(); // тут можно будет переключать сервер с тестового на реальный
+        Container.Bind<IGameClient>().To<MobileGameClient>().AsSingle(); // тут можно будет менять платформу клиента на необходимую (мобайл, PC и прочее)
 
         var gameManager = Container.InstantiatePrefabForComponent<GameManager>(gameManagerPrefab);
         Container.Bind<GameManager>().FromInstance(gameManager).AsSingle();
+
+        // gui
+        InstallGuiScreens();
     }
 
     private void InstallGuiContainers()

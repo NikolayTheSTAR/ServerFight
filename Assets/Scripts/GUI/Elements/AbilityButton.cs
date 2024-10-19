@@ -3,15 +3,15 @@ using TheSTAR.GUI;
 using TMPro;
 using UnityEngine;
 
-public class SkillButton : MonoBehaviour
+public class AbilityButton : MonoBehaviour
 {
     [SerializeField] private PointerButton button;
     [SerializeField] private TextMeshProUGUI stepsText;
 
-    private SkillType skillType;
-    private Action<SkillType> onClickAction;
+    private AbilityType skillType;
+    private Action<AbilityType> onClickAction;
 
-    public void Init(SkillType skillType, Action<SkillType> onClickAction)
+    public void Init(AbilityType skillType, Action<AbilityType> onClickAction)
     {
         this.skillType = skillType;
         this.onClickAction = onClickAction;

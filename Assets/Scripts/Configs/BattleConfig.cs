@@ -8,15 +8,15 @@ public class BattleConfig : ScriptableObject
     [SerializeField] private UnitConfigData playerData;
     [SerializeField] private UnitConfigData enemyData;
 
-    [Header("Skills")]
-    [SerializeField] private SkillConfigData[] skills;
+    [Header("Abilities")]
+    [SerializeField] private AbilityConfigData[] abilities;
 
     [Header("Effects")]
     [SerializeField] private EffectConfigData[] effects;
 
     public UnitConfigData PlayerData => playerData;
     public UnitConfigData EnemyData => enemyData;
-    public SkillConfigData[] Skills => skills;
+    public AbilityConfigData[] Abilities => abilities;
     public EffectConfigData[] Effects => effects;
 }
 
@@ -29,13 +29,18 @@ public struct UnitConfigData
 }
 
 [Serializable]
-public struct SkillConfigData
+public struct AbilityConfigData
 {
-    [SerializeField] private SkillType skillType;
-    [SerializeField] private SkillTargetType target;
+    [SerializeField] private AbilityType skillType;
     [SerializeField] private int force;
     [SerializeField] private int duration;
     [SerializeField] private int recharging;
+    [SerializeField] private bool effectForOwner;
+
+    public int Force => force;
+    public int Duration => duration;
+    public int Recharging => recharging;
+    public bool EffectForOwner => effectForOwner;
 }
 
 [Serializable]
@@ -47,7 +52,7 @@ public struct EffectConfigData
     public Sprite Icon => icon;
 }
 
-public enum SkillType
+public enum AbilityType
 {
     /// <summary> применяется на противника. Наносит 8 единиц урона. </summary>
     Attack,
@@ -70,10 +75,4 @@ public enum EffectType
     Defence,
     Regenerate,
     Fire
-}
-
-public enum SkillTargetType
-{
-    Self,
-    Other
 }
