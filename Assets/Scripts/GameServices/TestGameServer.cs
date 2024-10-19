@@ -172,20 +172,20 @@ public class TestGameServer : IGameServer
 
         OnChangeGameState?.Invoke(battleData.battleState);
 
-        // проверка умер ли персонаж либо враг происходит после каждого хода
+        if (playerOwner) SimulateWaitForEnemysTurn();
+        else
+        {
+            OnSwitchToNextStep(battleData.battleState.playerState);
+            OnSwitchToNextStep(battleData.battleState.enemyState);
+        }
 
-        if (battleData.battleState.playerState.hp <= 0) Defeat();
-        else if (battleData.battleState.enemyState.hp <= 0) Win();
-        else if (playerOwner) SimulateWaitForEnemysTurn();
-
-        // todo это потом расположить в нужном месте
-        //OnSwitchToNextStep(battleData.battleState.playerState);
-        //OnSwitchToNextStep(battleData.battleState.enemyState);
+        if (battleData.battleState.playerState.hp <= 0) EndFight(false);
+        else if (battleData.battleState.enemyState.hp <= 0) EndFight(true);
     }
 
     private void SimulateWaitForEnemysTurn()
     {
-        DOVirtual.Float(0, 1, battleConfig.Get.EnemyDecisionTime, (value) => {}).OnComplete(() =>
+        DOVirtual.Float(0, 1, battleConfig.Get.BattleDelay, (value) => {}).OnComplete(() =>
         {
             DoEnemysTurn();
         });
@@ -291,23 +291,14 @@ public class TestGameServer : IGameServer
         OnChangeGameState?.Invoke(battleData.battleState);
     }
 
-    private void Win()
+    private void EndFight(bool win)
     {
+        Debug.Log(win ? "Win" : "Defeat");
         waitTweener?.Kill();
         var battleData = data.gameData.GetSection<BattleData>();
-        battleData.battleState.battleStatus = BattleStatus.Win;
+        battleData.battleState.battleStatus = win ? BattleStatus.Win : BattleStatus.Defeat;
         data.Save(battleData);
-        waitTweener = DOVirtual.Float(0f, 1f, 1f, (value) => {}).OnComplete(RestartGame);
-        OnChangeGameState?.Invoke(battleData.battleState);
-    }
-
-    private void Defeat()
-    {
-        waitTweener?.Kill();
-        var battleData = data.gameData.GetSection<BattleData>();
-        battleData.battleState.battleStatus = BattleStatus.Defeat;
-        data.Save(battleData);
-        waitTweener = DOVirtual.Float(0f, 1f, 1f, (value) => {}).OnComplete(RestartGame);
+        waitTweener = DOVirtual.Float(0f, 1f, battleConfig.Get.BattleDelay, (value) => {}).OnComplete(RestartGame);
         OnChangeGameState?.Invoke(battleData.battleState);
     }
 }
