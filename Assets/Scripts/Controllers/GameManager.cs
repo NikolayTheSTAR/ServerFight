@@ -43,7 +43,7 @@ public class GameManager : MonoBehaviour
 }
 
 [Serializable]
-public struct BattleState
+public class BattleState
 {
     public BattleStatus battleStatus;
     public UnitState playerState;

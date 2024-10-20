@@ -1,10 +1,6 @@
 using System;
 using TheSTAR.Data;
-using UnityEngine;
 using Zenject;
-using TheSTAR.Utility;
-using System.Collections.Generic;
-using DG.Tweening;
 
 /// <summary>
 /// Содержит логику игры. Принимает запросы от клиента и обрабатывать их. 
@@ -14,17 +10,26 @@ using DG.Tweening;
 public class TestGameServer : IGameServer
 {
     private DataController data;
-
-    private readonly ResourceHelper<BattleConfig> battleConfig = new("Configs/BattleConfig");
+    private Battle battle;
 
     public event Action<BattleState> OnChangeGameState;
 
-    private Tweener waitTweener;
-
     [Inject]
-    private void Construct(DataController data)
+    private void Construct(DataController data, Battle battle)
     {
         this.data = data;
+        this.battle = battle;
+        battle.CompleteEndBattleEvent += RestartGame;
+        battle.StartEndBattleEvent += (state) =>
+        {
+            data.Save<BattleData>();
+            OnChangeGameState(state);
+        };
+        battle.OnTurnCompletedEvent += (state) =>
+        {
+            data.Save<BattleData>();
+            OnChangeGameState(state);
+        };
     }
 
     public void InitGame()
@@ -42,7 +47,7 @@ public class TestGameServer : IGameServer
     public void StartGame()
     {
         var battleData = data.gameData.GetSection<BattleData>();
-        if (battleData.battleState.battleStatus == BattleStatus.EnemysTurn) SimulateWaitForEnemysTurn();
+        if (battleData.battleState.battleStatus == BattleStatus.EnemysTurn) battle.SimulateWaitForEnemysTurn(battleData.battleState);
     }
 
     /// <summary>
@@ -60,25 +65,11 @@ public class TestGameServer : IGameServer
         }
     }
 
-    private BattleState GetInitialGameState()
-    {        
-        UnitState playerState = new(
-            battleConfig.Get.PlayerData.MaxHp, 
-            battleConfig.Get.PlayerData.MaxHp, 
-            new Dictionary<EffectType, EffectInGameData>(), 
-            new Dictionary<AbilityType, int>());
-
-        UnitState enemyState = new(
-            battleConfig.Get.EnemyData.MaxHp, 
-            battleConfig.Get.EnemyData.MaxHp, 
-            new Dictionary<EffectType, EffectInGameData>(), 
-            new Dictionary<AbilityType, int>());
-
-        return new(BattleStatus.PlayerTurn, playerState, enemyState);
-    }
-
     public void HandleGameAction(bool playerOwner, string actionID)
     {
+        var battleData = data.gameData.GetSection<BattleData>();
+        var battleState = battleData.battleState;
+
         switch (actionID)
         {
             case "restart":
@@ -86,240 +77,36 @@ public class TestGameServer : IGameServer
                 break;
 
             case "ability_Attack":
-                DoAbility(playerOwner, AbilityType.Attack);
+                battle.DoAbility(battleState, playerOwner, AbilityType.Attack);
                 break;
 
             case "ability_Defence":
-                DoAbility(playerOwner, AbilityType.Defence);
+                battle.DoAbility(battleState, playerOwner, AbilityType.Defence);
                 break;
 
             case "ability_Regenerate":
-                DoAbility(playerOwner, AbilityType.Regenerate);
+                battle.DoAbility(battleState, playerOwner, AbilityType.Regenerate);
                 break;
 
             case "ability_Fireball":
-                DoAbility(playerOwner, AbilityType.Fireball);
+                battle.DoAbility(battleState, playerOwner, AbilityType.Fireball);
                 break;
 
             case "ability_Clear":
-                DoAbility(playerOwner, AbilityType.Clear);
+                battle.DoAbility(battleState, playerOwner, AbilityType.Clear);
                 break;
         }
     }
 
     private void RestartGame()
     {
-        waitTweener?.Kill();
         var battleData = data.gameData.GetSection<BattleData>();
 
-        var startState = GetInitialGameState();
+        var startState = battle.GetInitialGameState();
         battleData.battleState = startState;
         battleData.gameStarted = true;
         data.Save(battleData);
 
         OnChangeGameState?.Invoke(startState);
-    }
-
-    private void DoAbility(bool playerOwner, AbilityType abilityType)
-    {
-        var battleData = data.gameData.GetSection<BattleData>();
-
-        bool canUseAbilityByGameStatus = 
-            (playerOwner && battleData.battleState.battleStatus == BattleStatus.PlayerTurn) || 
-            (!playerOwner && battleData.battleState.battleStatus == BattleStatus.EnemysTurn);
-
-        if (!canUseAbilityByGameStatus) return;
-
-        var abilityData = battleConfig.Get.Abilities[(int)abilityType];
-        bool finalEffectForPlayer = abilityData.EffectForOwner ? playerOwner : !playerOwner;
-        UnitState unit = finalEffectForPlayer ? battleData.battleState.playerState : battleData.battleState.enemyState;
-
-        switch (abilityType)
-        {
-            case AbilityType.Attack:
-                HitUnit(unit, abilityData.Force);
-                break;
-                
-            case AbilityType.Defence:
-                SetEffect(unit, EffectType.Defence, abilityData.Duration, abilityType, playerOwner);
-                break;
-
-            case AbilityType.Regenerate:
-                SetEffect(unit, EffectType.Regenerate, abilityData.Duration, abilityType, playerOwner);
-                break;
-
-            case AbilityType.Fireball:
-                HitUnit(unit, abilityData.Force);
-                SetEffect(unit, EffectType.Fire, abilityData.Duration, abilityType, playerOwner);
-                break;
-
-            case AbilityType.Clear:
-                var ownerEffects = unit.effects;
-                if (ownerEffects.ContainsKey(EffectType.Fire)) RemoveEffect(unit, EffectType.Fire);
-                break;
-        }
-
-        // recharging
-        if (abilityData.Recharging > 0)
-        {
-            var ownerRecharging = playerOwner ? battleData.battleState.playerState.abilitiesRecharging : battleData.battleState.enemyState.abilitiesRecharging;
-            if (ownerRecharging.ContainsKey(abilityType)) ownerRecharging[abilityType] = -1;
-            else ownerRecharging.Add(abilityType, -1);
-        }
-        
-        battleData.battleState.battleStatus = playerOwner ? BattleStatus.EnemysTurn : BattleStatus.PlayerTurn;
-        data.Save(battleData);
-
-        OnChangeGameState?.Invoke(battleData.battleState);
-
-        if (playerOwner) SimulateWaitForEnemysTurn();
-        else
-        {
-            OnSwitchToNextStep(battleData.battleState.playerState);
-            OnSwitchToNextStep(battleData.battleState.enemyState);
-        }
-
-        if (battleData.battleState.playerState.hp <= 0) EndFight(false);
-        else if (battleData.battleState.enemyState.hp <= 0) EndFight(true);
-    }
-
-    private void SimulateWaitForEnemysTurn()
-    {
-        DOVirtual.Float(0, 1, battleConfig.Get.BattleDelay, (value) => {}).OnComplete(() =>
-        {
-            DoEnemysTurn();
-        });
-    }
-
-    private void DoEnemysTurn()
-    {
-        var battleData = data.gameData.GetSection<BattleData>();
-        var unit = battleData.battleState.enemyState;
-
-        List<AbilityType> availableAbilities = new();
-        var allAbilities = EnumUtility.GetValues<AbilityType>();
-        foreach (var ability in allAbilities)
-        {
-            if (!unit.abilitiesRecharging.ContainsKey(ability) || unit.abilitiesRecharging[ability] == 0) availableAbilities.Add(ability);
-        }
-
-        var decision = ArrayUtility.GetRandomValue(availableAbilities);
-        DoAbility(false, decision);
-    }
-
-    private void SetEffect(UnitState unit, EffectType effectType, int duration, AbilityType fromAbility, bool fromPlayer)
-    {
-        var ownerEffects = unit.effects;
-        if (ownerEffects.ContainsKey(effectType)) ownerEffects[effectType].value += duration;
-        else ownerEffects.Add(effectType, new EffectInGameData(duration, fromAbility, fromPlayer));
-    }
-
-    // todo здесь убрать ignoreDefence и наносить урон только один раз за ход (суммарный)
-    private void HitUnit(UnitState unit, int force, bool ignoreDefence = false)
-    {
-        if (!ignoreDefence && unit.effects.ContainsKey(EffectType.Defence)) force -= battleConfig.Get.Abilities[(int)AbilityType.Defence].Force;
-
-        if (force <= 0) return;
-        
-        unit.hp -= force;
-        if (unit.hp < 0) unit.hp = 0;
-    }
-
-    private void HillUnit(UnitState unit, int force)
-    {
-        unit.hp += force;
-        if (unit.hp > unit.maxHp) unit.hp = unit.maxHp;
-    }
-
-    /// <summary>
-    /// Перешли на новый ход, нужно сделать шаг перезарядки и эффекта
-    /// </summary>
-    private void OnSwitchToNextStep(UnitState unit)
-    {
-        var battleData = data.gameData.GetSection<BattleData>();
-
-        // recharging
-        var ownerRecharging = unit.abilitiesRecharging;
-        
-        AbilityType[] abilityTypes = new AbilityType[ownerRecharging.Count];
-        int abilityIndex = 0;
-        foreach (var recharging in ownerRecharging)
-        {
-            abilityTypes[abilityIndex] = recharging.Key;
-            abilityIndex++;
-        }
-        
-        foreach (var abilityType in abilityTypes)
-        {
-            if (ownerRecharging[abilityType] > 0) ownerRecharging[abilityType]--;
-        }
-
-        // effects
-        var ownerEffects = unit.effects;
-
-        EffectType[] effectTypes = new EffectType[ownerEffects.Count];
-        int effectIndex = 0;
-        foreach (var effect in ownerEffects)
-        {
-            effectTypes[effectIndex] = effect.Key;
-            effectIndex++;
-        }
-
-        foreach (var effectType in effectTypes)
-        {
-            if (ownerEffects[effectType].value > 0)
-            {
-                if (effectType == EffectType.Regenerate)
-                {
-                    int regenerationForce = battleConfig.Get.Abilities[(int)AbilityType.Regenerate].Force;
-                    HillUnit(unit, regenerationForce);
-                }
-                else if (effectType == EffectType.Fire)
-                {
-                    int fireForce = 1;
-                    HitUnit(unit, fireForce, true);
-                }
-
-                ownerEffects[effectType].value--;
-
-                if (ownerEffects[effectType].value <= 0) RemoveEffect(unit, effectType);
-            }
-            else RemoveEffect(unit, effectType);
-        }
-
-        data.Save(battleData);
-
-        OnChangeGameState?.Invoke(battleData.battleState);
-    }
-
-    void RemoveEffect(UnitState unit, EffectType effectType)
-    {
-        var effectData = unit.effects[effectType];
-        unit.effects.Remove(effectType);
-        OnEndEffect(unit, effectType, effectData.fromAbility, effectData.fromPlayer);
-    }
-
-    /// <summary>
-    /// Если какой-либо эффект закончился, нужно начать перезарядку у его хозяина
-    /// </summary>
-    private void OnEndEffect(UnitState effectUnit, EffectType effectType, AbilityType fromAbility, bool fromPlayer)
-    {
-        var battleData = data.gameData.GetSection<BattleData>();
-        UnitState ownerUnit = fromPlayer ? battleData.battleState.playerState : battleData.battleState.enemyState;
-        var abilityData = battleConfig.Get.Abilities[(int)fromAbility];
-        ownerUnit.abilitiesRecharging[fromAbility] = abilityData.Duration;
-        data.Save(battleData);
-        OnChangeGameState?.Invoke(battleData.battleState);
-    }
-
-    private void EndFight(bool win)
-    {
-        Debug.Log(win ? "Win" : "Defeat");
-        waitTweener?.Kill();
-        var battleData = data.gameData.GetSection<BattleData>();
-        battleData.battleState.battleStatus = win ? BattleStatus.Win : BattleStatus.Defeat;
-        data.Save(battleData);
-        waitTweener = DOVirtual.Float(0f, 1f, battleConfig.Get.BattleDelay, (value) => {}).OnComplete(RestartGame);
-        OnChangeGameState?.Invoke(battleData.battleState);
     }
 }

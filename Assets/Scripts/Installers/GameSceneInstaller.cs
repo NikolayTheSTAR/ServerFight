@@ -22,6 +22,7 @@ public class GameSceneInstaller : MonoInstaller
     public override void InstallBindings()
     {
         Container.Bind<DataController>().AsSingle();
+        Container.Bind<Battle>().AsSingle();
 
         InstallGuiContainers();
         
