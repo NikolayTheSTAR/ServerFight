@@ -24,13 +24,13 @@ public class UnitVisual : MonoBehaviour
             if (createdEffectUi.Count <= i)
             {
                 var newEffectUI = Instantiate(effectUiPrefab, effectsParent);
-                newEffectUI.Set(battleConfig.Get.Effects[(int)effect.Key].Icon, effect.Value);
+                newEffectUI.Set(battleConfig.Get.Effects[(int)effect.Key].Icon, effect.Value.value);
                 createdEffectUi.Add(newEffectUI);
             }
             else
             {
                 createdEffectUi[i].gameObject.SetActive(true);
-                createdEffectUi[i].Set(battleConfig.Get.Effects[(int)effect.Key].Icon, effect.Value);
+                createdEffectUi[i].Set(battleConfig.Get.Effects[(int)effect.Key].Icon, effect.Value.value);
             }
 
             i++;

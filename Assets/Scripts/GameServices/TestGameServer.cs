@@ -65,13 +65,13 @@ public class TestGameServer : IGameServer
         UnitState playerState = new(
             battleConfig.Get.PlayerData.MaxHp, 
             battleConfig.Get.PlayerData.MaxHp, 
-            new Dictionary<EffectType, int>(), 
+            new Dictionary<EffectType, EffectInGameData>(), 
             new Dictionary<AbilityType, int>());
 
         UnitState enemyState = new(
             battleConfig.Get.EnemyData.MaxHp, 
             battleConfig.Get.EnemyData.MaxHp, 
-            new Dictionary<EffectType, int>(), 
+            new Dictionary<EffectType, EffectInGameData>(), 
             new Dictionary<AbilityType, int>());
 
         return new(BattleStatus.PlayerTurn, playerState, enemyState);
@@ -141,21 +141,21 @@ public class TestGameServer : IGameServer
                 break;
                 
             case AbilityType.Defence:
-                SetEffect(unit, EffectType.Defence, abilityData.Duration);
+                SetEffect(unit, EffectType.Defence, abilityData.Duration, abilityType, playerOwner);
                 break;
 
             case AbilityType.Regenerate:
-                SetEffect(unit, EffectType.Regenerate, abilityData.Duration);
+                SetEffect(unit, EffectType.Regenerate, abilityData.Duration, abilityType, playerOwner);
                 break;
 
             case AbilityType.Fireball:
                 HitUnit(unit, abilityData.Force);
-                SetEffect(unit, EffectType.Fire, abilityData.Duration);
+                SetEffect(unit, EffectType.Fire, abilityData.Duration, abilityType, playerOwner);
                 break;
 
             case AbilityType.Clear:
-                var ownerEffects = playerOwner ? battleData.battleState.playerState.effects : battleData.battleState.enemyState.effects;
-                if (ownerEffects.ContainsKey(EffectType.Fire)) ownerEffects.Remove(EffectType.Fire);
+                var ownerEffects = unit.effects;
+                if (ownerEffects.ContainsKey(EffectType.Fire)) RemoveEffect(unit, EffectType.Fire);
                 break;
         }
 
@@ -163,8 +163,8 @@ public class TestGameServer : IGameServer
         if (abilityData.Recharging > 0)
         {
             var ownerRecharging = playerOwner ? battleData.battleState.playerState.abilitiesRecharging : battleData.battleState.enemyState.abilitiesRecharging;
-            if (ownerRecharging.ContainsKey(abilityType)) ownerRecharging[abilityType] = abilityData.Recharging;
-            else ownerRecharging.Add(abilityType, abilityData.Recharging);
+            if (ownerRecharging.ContainsKey(abilityType)) ownerRecharging[abilityType] = -1;
+            else ownerRecharging.Add(abilityType, -1);
         }
         
         battleData.battleState.battleStatus = playerOwner ? BattleStatus.EnemysTurn : BattleStatus.PlayerTurn;
@@ -200,20 +200,21 @@ public class TestGameServer : IGameServer
         var allAbilities = EnumUtility.GetValues<AbilityType>();
         foreach (var ability in allAbilities)
         {
-            if (!unit.abilitiesRecharging.ContainsKey(ability) || unit.abilitiesRecharging[ability] <= 0) availableAbilities.Add(ability);
+            if (!unit.abilitiesRecharging.ContainsKey(ability) || unit.abilitiesRecharging[ability] == 0) availableAbilities.Add(ability);
         }
 
         var decision = ArrayUtility.GetRandomValue(availableAbilities);
         DoAbility(false, decision);
     }
 
-    private void SetEffect(UnitState unit, EffectType effectType, int duration)
+    private void SetEffect(UnitState unit, EffectType effectType, int duration, AbilityType fromAbility, bool fromPlayer)
     {
         var ownerEffects = unit.effects;
-        if (ownerEffects.ContainsKey(effectType)) ownerEffects[effectType] += duration;
-        else ownerEffects.Add(effectType, duration);
+        if (ownerEffects.ContainsKey(effectType)) ownerEffects[effectType].value += duration;
+        else ownerEffects.Add(effectType, new EffectInGameData(duration, fromAbility, fromPlayer));
     }
 
+    // todo здесь убрать ignoreDefence и наносить урон только один раз за ход (суммарный)
     private void HitUnit(UnitState unit, int force, bool ignoreDefence = false)
     {
         if (!ignoreDefence && unit.effects.ContainsKey(EffectType.Defence)) force -= battleConfig.Get.Abilities[(int)AbilityType.Defence].Force;
@@ -266,7 +267,7 @@ public class TestGameServer : IGameServer
 
         foreach (var effectType in effectTypes)
         {
-            if (ownerEffects[effectType] > 0)
+            if (ownerEffects[effectType].value > 0)
             {
                 if (effectType == EffectType.Regenerate)
                 {
@@ -279,15 +280,35 @@ public class TestGameServer : IGameServer
                     HitUnit(unit, fireForce, true);
                 }
 
-                ownerEffects[effectType]--;
+                ownerEffects[effectType].value--;
 
-                if (ownerEffects[effectType] <= 0) ownerEffects.Remove(effectType);
+                if (ownerEffects[effectType].value <= 0) RemoveEffect(unit, effectType);
             }
-            else ownerEffects.Remove(effectType);
+            else RemoveEffect(unit, effectType);
         }
 
         data.Save(battleData);
 
+        OnChangeGameState?.Invoke(battleData.battleState);
+    }
+
+    void RemoveEffect(UnitState unit, EffectType effectType)
+    {
+        var effectData = unit.effects[effectType];
+        unit.effects.Remove(effectType);
+        OnEndEffect(unit, effectType, effectData.fromAbility, effectData.fromPlayer);
+    }
+
+    /// <summary>
+    /// Если какой-либо эффект закончился, нужно начать перезарядку у его хозяина
+    /// </summary>
+    private void OnEndEffect(UnitState effectUnit, EffectType effectType, AbilityType fromAbility, bool fromPlayer)
+    {
+        var battleData = data.gameData.GetSection<BattleData>();
+        UnitState ownerUnit = fromPlayer ? battleData.battleState.playerState : battleData.battleState.enemyState;
+        var abilityData = battleConfig.Get.Abilities[(int)fromAbility];
+        ownerUnit.abilitiesRecharging[fromAbility] = abilityData.Duration;
+        data.Save(battleData);
         OnChangeGameState?.Invoke(battleData.battleState);
     }
 

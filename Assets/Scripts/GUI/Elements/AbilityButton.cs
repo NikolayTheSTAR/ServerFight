@@ -26,6 +26,6 @@ public class AbilityButton : MonoBehaviour
     {
         stepsText.gameObject.SetActive(stepsToUnlock > 0);
         stepsText.text = stepsToUnlock.ToString();
-        button.SetInteractable(playersTurn && stepsToUnlock <= 0);
+        button.SetInteractable(playersTurn && stepsToUnlock == 0);
     }
 }
