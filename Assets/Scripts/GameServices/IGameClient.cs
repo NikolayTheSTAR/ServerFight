@@ -1,5 +1,5 @@
 public interface IGameClient : IGameService
 {
     void VisualizeGameState(BattleState state);
-    void SendPlayerActionToServer(string actionID);
+    void SendGameActionToServer(string actionID);
 }

@@ -54,12 +54,12 @@ namespace TheSTAR.GUI
 
         private void OnSkillButtonClick(AbilityType skillType)
         {
-            client.SendPlayerActionToServer($"ability_{skillType}");
+            client.SendGameActionToServer($"ability_{skillType}");
         }
 
         private void OnRestartButtonClick()
         {
-            client.SendPlayerActionToServer("restart");
+            client.SendGameActionToServer("restart");
         }
     }
 }

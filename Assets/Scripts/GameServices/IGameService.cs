@@ -1,6 +1,8 @@
+using System.Threading.Tasks;
+
 public interface IGameService
 {
     void InitGame();
-    void LoadGame();
+    Task LoadGame();
     void StartGame();
 }

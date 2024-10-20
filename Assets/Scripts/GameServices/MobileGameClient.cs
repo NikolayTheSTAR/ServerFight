@@ -1,5 +1,8 @@
 using TheSTAR.GUI;
 using Zenject;
+using DG.Tweening;
+using TheSTAR.Utility;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Отвечает за обработку ввода от игрока, отображение интерфейса и за получение обновлений от сервера.
@@ -10,21 +13,25 @@ public class MobileGameClient : IGameClient
     private GuiController gui;
     private IGameServer server;
 
+    private readonly ResourceHelper<BattleConfig> battleConfig = new("Configs/BattleConfig");
+
     [Inject]
     private void Construct(GameWorld world, GuiController gui, IGameServer server)
     {
         this.world = world;
         this.gui = gui;
         this.server = server;
-        server.OnChangeGameState += VisualizeGameState;
     }
 
     public void InitGame()
     {}
 
-    public void LoadGame()
+    public async Task LoadGame()
     {
         gui.Show<LoadScreen>();
+
+        var battleData = await server.GetCurrentGameState();
+        VisualizeGameState(battleData);
     }
 
     public void StartGame()
@@ -38,8 +45,19 @@ public class MobileGameClient : IGameClient
         gui.FindScreen<GameScreen>().VisualizeGameState(state);
     }
 
-    public void SendPlayerActionToServer(string actionID)
+    public async void SendGameActionToServer(string actionID)
     {
-        server.HandleGameAction(true, actionID);
+        var battleState = await server.HandleGameAction(true, actionID);
+        VisualizeGameState(battleState);
+
+        if (battleState.battleStatus == BattleStatus.EnemysTurn) SimulateWaitForEnemysTurn();
+    }
+
+    private void SimulateWaitForEnemysTurn()
+    {
+        DOVirtual.Float(0, 1, battleConfig.Get.BattleDelay, (value) => {}).OnComplete(() =>
+        {
+            SendGameActionToServer("enemy_turn");
+        });
     }
 }

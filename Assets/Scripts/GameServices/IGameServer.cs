@@ -1,7 +1,7 @@
-using System;
+using System.Threading.Tasks;
 
 public interface IGameServer : IGameService
 {
-    event Action<BattleState> OnChangeGameState;
-    void HandleGameAction(bool playerOwner, string actionID);
+    Task<BattleState> GetCurrentGameState();
+    Task<BattleState> HandleGameAction(bool playerOwner, string actionID);
 }

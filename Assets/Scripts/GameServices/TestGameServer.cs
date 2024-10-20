@@ -1,4 +1,4 @@
-using System;
+using System.Threading.Tasks;
 using TheSTAR.Data;
 using Zenject;
 
@@ -12,7 +12,7 @@ public class TestGameServer : IGameServer
     private DataController data;
     private Battle battle;
 
-    public event Action<BattleState> OnChangeGameState;
+    private const int TestServerDelay = 10;
 
     [Inject]
     private void Construct(DataController data, Battle battle)
@@ -20,53 +20,46 @@ public class TestGameServer : IGameServer
         this.data = data;
         this.battle = battle;
         battle.CompleteEndBattleEvent += RestartGame;
-        battle.StartEndBattleEvent += (state) =>
-        {
-            data.Save<BattleData>();
-            OnChangeGameState(state);
-        };
         battle.OnTurnCompletedEvent += (state) =>
         {
             data.Save<BattleData>();
-            OnChangeGameState(state);
         };
     }
 
     public void InitGame()
     {}
 
-    public void LoadGame()
+    public async Task LoadGame()
     {
+        await Task.Delay(TestServerDelay);
         data.LoadAll();
-        GetCurrentGameState(state =>
-        {
-            OnChangeGameState?.Invoke(state);
-        });
     }
-
+    
     public void StartGame()
-    {
-        var battleData = data.gameData.GetSection<BattleData>();
-        if (battleData.battleState.battleStatus == BattleStatus.EnemysTurn) battle.SimulateWaitForEnemysTurn(battleData.battleState);
-    }
+    {}
 
     /// <summary>
     /// В тестовой реализации данные хранятся на девайсе, для реального проекта можно было бы создать RealGameServer, который бы уже работал с сетью
     /// </summary>
-    private void GetCurrentGameState(Action<BattleState> callback)
+    public async Task<BattleState> GetCurrentGameState()
     {
+        await Task.Delay(TestServerDelay);
+
         var battleData = data.gameData.GetSection<BattleData>();
         
-        if (battleData.gameStarted) callback(battleData.battleState);
+        if (battleData.gameStarted) return battleData.battleState;
         else
         {
             RestartGame();
-            callback(battleData.battleState);
+            return battleData.battleState;
         }
     }
 
-    public void HandleGameAction(bool playerOwner, string actionID)
+    public async Task<BattleState> HandleGameAction(bool playerOwner, string actionID)
     {
+        // Имитация задержки отклика от сервера
+        await Task.Delay(TestServerDelay);
+
         var battleData = data.gameData.GetSection<BattleData>();
         var battleState = battleData.battleState;
 
@@ -95,18 +88,20 @@ public class TestGameServer : IGameServer
             case "ability_Clear":
                 battle.DoAbility(battleState, playerOwner, AbilityType.Clear);
                 break;
+            
+            case "enemy_turn":
+                battle.DoEnemysTurn(battleState);
+                break;
         }
+
+        return battleState;
     }
 
     private void RestartGame()
     {
         var battleData = data.gameData.GetSection<BattleData>();
-
-        var startState = battle.GetInitialGameState();
-        battleData.battleState = startState;
+        battle.SetInitialBattleState(battleData);
         battleData.gameStarted = true;
         data.Save(battleData);
-
-        OnChangeGameState?.Invoke(startState);
     }
 }

@@ -1,18 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TheSTAR.Utility;
-using DG.Tweening;
 using System;
+using TheSTAR.Data;
 
 /// <summary>
 /// Battle получиет текущий BattleState и преобразует его с учётом того действия, которое нужно выполнить
 /// </summary>
 public class Battle
 {
-    private Tweener waitTweener;
     private readonly ResourceHelper<BattleConfig> battleConfig = new("Configs/BattleConfig");
 
-    public event Action<BattleState> StartEndBattleEvent;
     public event Action CompleteEndBattleEvent;
     public event Action<BattleState> OnTurnCompletedEvent;
 
@@ -56,19 +54,17 @@ public class Battle
         // recharging
         if (abilityData.Recharging > 0)
         {
+            int valueForRecharging = abilityData.Duration > 0 ? -1 : abilityData.Recharging;
+
             var ownerRecharging = playerOwner ? battleState.playerState.abilitiesRecharging : battleState.enemyState.abilitiesRecharging;
-            if (ownerRecharging.ContainsKey(abilityType)) ownerRecharging[abilityType] = -1;
-            else ownerRecharging.Add(abilityType, -1);
+            if (ownerRecharging.ContainsKey(abilityType)) ownerRecharging[abilityType] = valueForRecharging;
+            else ownerRecharging.Add(abilityType, valueForRecharging);
         }
         
         battleState.battleStatus = playerOwner ? BattleStatus.EnemysTurn : BattleStatus.PlayerTurn;
 
-        if (playerOwner) SimulateWaitForEnemysTurn(battleState);
-        else
-        {
-            OnSwitchToNextStep(battleState, battleState.playerState);
-            OnSwitchToNextStep(battleState, battleState.enemyState);
-        }
+        if (playerOwner) OnSwitchToNextStep(battleState, battleState.enemyState);
+        else OnSwitchToNextStep(battleState, battleState.playerState);
 
         OnTurnCompletedEvent?.Invoke(battleState);
 
@@ -76,15 +72,7 @@ public class Battle
         else if (battleState.enemyState.hp <= 0) EndFight(battleState, true);   
     }
 
-    public void SimulateWaitForEnemysTurn(BattleState battleState)
-    {
-        DOVirtual.Float(0, 1, battleConfig.Get.BattleDelay, (value) => {}).OnComplete(() =>
-        {
-            DoEnemysTurn(battleState);
-        });
-    }
-
-    private void DoEnemysTurn(BattleState battleState)
+    public void DoEnemysTurn(BattleState battleState)
     {
         var unit = battleState.enemyState;
 
@@ -191,17 +179,11 @@ public class Battle
     private void EndFight(BattleState battleState, bool win)
     {
         Debug.Log(win ? "Win" : "Defeat");
-        waitTweener?.Kill();
         battleState.battleStatus = win ? BattleStatus.Win : BattleStatus.Defeat;
-        waitTweener = DOVirtual.Float(0f, 1f, battleConfig.Get.BattleDelay, (value) => {}).OnComplete(() => 
-        {
-            CompleteEndBattleEvent?.Invoke();
-        });
-
-        StartEndBattleEvent?.Invoke(battleState);
+        CompleteEndBattleEvent?.Invoke();
     }
 
-    public BattleState GetInitialGameState()
+    public void SetInitialBattleState(BattleData battleData)
     {        
         UnitState playerState = new(
             battleConfig.Get.PlayerData.MaxHp, 
@@ -215,6 +197,79 @@ public class Battle
             new Dictionary<EffectType, EffectInGameData>(), 
             new Dictionary<AbilityType, int>());
 
-        return new(BattleStatus.PlayerTurn, playerState, enemyState);
+        if (battleData.battleState == null) battleData.battleState = new (BattleStatus.PlayerTurn, playerState, enemyState);
+        else battleData.battleState.Set(BattleStatus.PlayerTurn, playerState, enemyState);
+    }
+}
+
+[Serializable]
+public class BattleState
+{
+    public BattleStatus battleStatus;
+    public UnitState playerState;
+    public UnitState enemyState;
+
+    public BattleState(BattleStatus battleStatus, UnitState playerState, UnitState enemyState)
+    {
+        this.battleStatus = battleStatus;
+        this.playerState = playerState;
+        this.enemyState = enemyState;
+    }
+
+    public void Set(BattleStatus battleStatus, UnitState playerState, UnitState enemyState)
+    {
+        this.battleStatus = battleStatus;
+        this.playerState = playerState;
+        this.enemyState = enemyState;
+    }
+}
+
+[Serializable]
+public class UnitState
+{
+    public int hp;
+    public int maxHp;
+
+    // 0 означает что эффект неактивен, 
+    // 1 и больше означает количество ходов сколько ещё эффект будет активен
+    public Dictionary<EffectType, EffectInGameData> effects;
+
+    // 0 означает что способность можно использовать, 
+    // -1 означает что способность использована и ожидает начала перезарядки,
+    // 1 и больше означает сколько ходов ещё будет идти перезарядка
+    public Dictionary<AbilityType, int> abilitiesRecharging;
+
+    public UnitState(
+        int hp, 
+        int maxHp, 
+        Dictionary<EffectType, EffectInGameData> effects, 
+        Dictionary<AbilityType, int> abilitiesRecharging)
+    {
+        this.hp = hp;
+        this.maxHp = maxHp;
+        this.effects = effects;
+        this.abilitiesRecharging = abilitiesRecharging;
+    }    
+}
+
+public enum BattleStatus
+{
+    PlayerTurn,
+    EnemysTurn,
+    Win,
+    Defeat
+}
+
+public class EffectInGameData
+{
+    public int value;
+    public AbilityType fromAbility;
+    public bool fromPlayer;
+
+    public EffectInGameData(int value, AbilityType fromAbility, bool fromPlayer)
+    {
+        this.value = value;
+        this.fromAbility = fromAbility;
+        this.fromPlayer = fromPlayer;
     }
 }
